@@ -137,6 +137,17 @@ int ppsreader_fetch(struct ppsreader *p, struct history *h, FILE *in, FILE *out)
 	return 1;
 }
 
+int offset_fetch(struct history *h, FILE *in) {
+	double offset;
+
+	if (fscanf(in, "%lf", &offset) != 1)
+		return 0;
+
+	history_push(h, offset);
+
+	return 1;
+}
+
 void allan_init(struct allan *a) {
 	double x;
 	int i, interval;
@@ -289,6 +300,7 @@ void write_plot(const struct allan *a, const char *plotfile) {
 void print_usage() {
 	printf("usage: ppsallan [-p adev.plot] [-l pps.log] /sys/devices/virtual/pps/pps0/assert\n");
 	printf("       ppsallan -b < pps.log > adev.plot\n");
+	printf("       ppsallan -B < offset.log > adev.plot\n");
 }
 
 int main(int argc, char **argv) {
@@ -296,11 +308,13 @@ int main(int argc, char **argv) {
 	struct allan a;
 	struct history h;
 	struct ppsreader p;
-	int opt, r, live = 1;
+	int opt, r, live = 1, offset_input = 0;
 	const char *filename = NULL, *plotfile = NULL, *logfile = NULL;
 
-	while ((opt = getopt(argc, argv, "bp:l:h")) != -1) {
+	while ((opt = getopt(argc, argv, "Bbp:l:h")) != -1) {
 		switch (opt) {
+			case 'B':
+				offset_input = 1;
 			case 'b':
 				live = 0;
 				break;
@@ -332,7 +346,10 @@ int main(int argc, char **argv) {
 
 	if (!live) {
 		while (1) {
-			r = ppsreader_fetch(&p, &h, stdin, NULL);
+			if (offset_input)
+				r = offset_fetch(&h, stdin);
+			else
+				r = ppsreader_fetch(&p, &h, stdin, NULL);
 			if (r)
 				allan_update(&a, &h);
 			else if (feof(stdin))
