@@ -34,6 +34,7 @@
 #define VARLIMIT 100.0
 #define VARLIMITMINCOUNT 6
 #define MAXCOLS 300
+#define CUTOFF 10
 
 struct history {
 	double offsets[HISTSIZE];
@@ -203,7 +204,7 @@ int allan_get_interval(const struct allan *a, int i) {
 
 double allan_get_dev(const struct allan *a, int i) {
 	assert(i >= 0 && i < AVARS);
-	if (a->counts[i] < a->intervals[i])
+	if (a->counts[i] < CUTOFF * a->intervals[i])
 		return -1.0;
 	return sqrt(a->sums[i] / a->counts[i] / 2.0) / a->intervals[i];
 }
