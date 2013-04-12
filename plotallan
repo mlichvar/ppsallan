@@ -1,0 +1,21 @@
+#!/bin/bash
+# plot adev data with gnuplot
+(
+cat <<-EOF
+set grid
+set logscale x
+set logscale y
+set title "Allan deviation"
+set xlabel "time (s)"
+set format x "%.0e"
+set format y "%.0e"
+EOF
+first=1
+for i in "$@"; do
+	[ $first -eq 1 ] && echo -n "plot " || echo -n ", "
+	echo -n "\"$i\" using 2:3 with lines title \"$(basename $i)\""
+	first=0
+done
+echo
+) | \
+gnuplot -persist -
